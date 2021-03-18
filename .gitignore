@@ -2,3 +2,4 @@
 /venv/*
 /UCRArchive_2018.zip
 /.idea/
+*.pyc

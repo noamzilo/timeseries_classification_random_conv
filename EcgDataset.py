@@ -4,8 +4,6 @@ import pandas as pd
 import os
 from glob import glob
 import matplotlib.pyplot as plt
-import pytorch_lightning as pl
-import torch
 from torch.utils.data import Dataset
 
 
@@ -17,7 +15,7 @@ class EcgDataset(Dataset, ABC):
         self._labels_df = df.iloc[:, 0]
         self._data_df = df.iloc[:, 1:]
 
-    @classmethod
+    @classmethod  # this is not coupled to __init__ to allow other constructors
     def from_path(cls, path: str, substring: str, extension: str):
         assert os.path.isdir(path)
         pattern = os.path.join(path, extension)
@@ -32,7 +30,8 @@ class EcgDataset(Dataset, ABC):
         return self._data_df.shape[0]
 
     def __getitem__(self, index):
-        return self._data_df.iloc[index, :].values
+        item = self._data_df.iloc[index, :].values
+        return item
 
     def plot_sample(self):
         plt.figure()
@@ -40,21 +39,19 @@ class EcgDataset(Dataset, ABC):
         plt.show()
 
 
-def main():
-    data_path = os.path.join(".", "UCRArchive_2018", "ECG5000/")
-    train_dataset = EcgDataset.from_path(data_path, substring="TRAIN", extension=r"*.tsv")
-    test_dataset = EcgDataset.from_path(data_path, substring="TEST", extension=r"*.tsv")
-    train_dataset.plot_sample()
-    test_dataset.plot_sample()
-
-    print(f"train len: {len(train_dataset)}. test len: {len(test_dataset)}.")
-
-    test_entry_50 = test_dataset[50]
-    plt.figure()
-    plt.title("test entry 50")
-    plt.plot(test_entry_50)
-    plt.show()
-
-
 if __name__ == "__main__":
+    def main():
+        from paths import data_path
+        train_dataset = EcgDataset.from_path(data_path, substring="TRAIN", extension=r"*.tsv")
+        test_dataset = EcgDataset.from_path(data_path, substring="TEST", extension=r"*.tsv")
+        train_dataset.plot_sample()
+        test_dataset.plot_sample()
+
+        print(f"train len: {len(train_dataset)}. test len: {len(test_dataset)}.")
+
+        test_entry_50 = test_dataset[50]
+        plt.figure()
+        plt.title("test entry 50")
+        plt.plot(test_entry_50)
+        plt.show()
     main()
