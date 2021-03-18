@@ -17,6 +17,7 @@ class EcgDataset(Dataset, ABC):
 
     @classmethod  # this is not coupled to __init__ to allow other constructors
     def from_path(cls, path: str, substring: str, extension: str):
+        print(f"creating dataset from path {path}")
         assert os.path.isdir(path)
         pattern = os.path.join(path, extension)
         file_paths = glob(pattern, recursive=False)
@@ -41,9 +42,10 @@ class EcgDataset(Dataset, ABC):
 
 if __name__ == "__main__":
     def main():
-        from paths import data_path
-        train_dataset = EcgDataset.from_path(data_path, substring="TRAIN", extension=r"*.tsv")
-        test_dataset = EcgDataset.from_path(data_path, substring="TEST", extension=r"*.tsv")
+        from paths import dataset_path
+        print("WARNING: download the dataset first!")
+        train_dataset = EcgDataset.from_path(dataset_path, substring="TRAIN", extension=r"*.tsv")
+        test_dataset = EcgDataset.from_path(dataset_path, substring="TEST", extension=r"*.tsv")
         train_dataset.plot_sample()
         test_dataset.plot_sample()
 
