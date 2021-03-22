@@ -86,7 +86,7 @@ class EcgDataModule(pl.LightningDataModule):
 
 if __name__ == "__main__":
     def main():
-        module = EcgDataModule(auto_download=True)
+        module = EcgDataModule(auto_download=False)
         module.prepare_data()
         module.setup()
         dataloader = module.train_dataloader()

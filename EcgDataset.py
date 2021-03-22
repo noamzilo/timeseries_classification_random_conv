@@ -1,5 +1,6 @@
 from abc import ABC
 
+import numpy as np
 import pandas as pd
 import os
 from glob import glob
@@ -31,8 +32,9 @@ class EcgDataset(Dataset, ABC):
         return self._data_df.shape[0]
 
     def __getitem__(self, index):
-        item = self._data_df.iloc[index, :].values
-        return item
+        pred = self._labels_df.iloc[index] - 1
+        item = self._data_df.iloc[index, :].values.reshape(1, -1).astype(np.float32)
+        return item, pred
 
     def plot_sample(self):
         plt.figure()
