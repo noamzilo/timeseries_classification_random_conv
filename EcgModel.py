@@ -40,9 +40,12 @@ class EcgModel(pl.LightningModule):
             self.convs[_].requires_grad = False
         n_classes = 5
         self._linear = nn.Linear(in_features=self.num_kernels * 2, out_features=n_classes)
-        self.softmax = nn.Softmax()
+        self._softmax = nn.Softmax(dim=1)
 
         self._criterion = nn.CrossEntropyLoss(reduction="mean")#MSELoss(reduction='mean')
+        self.train_accuracy = pl.metrics.classification.Accuracy()
+        self.val_accuracy = pl.metrics.classification.Accuracy()
+
         self.lr = lr
         self.reg_const = reg_const
 
@@ -74,28 +77,40 @@ class EcgModel(pl.LightningModule):
         all_features = torch.stack(features_list, axis=1).reshape(-1, self.num_kernels*2)
 
         out = self._linear(all_features) # features.shape == batch,#kernels*2
+        #out = self._softmax(self._linear(all_features)) # features.shape == batch,#kernels*2
 
         loss = self._criterion(out, labels)
-
-        return loss
+        return out, loss
 
     def training_step(self, batch, batch_ind):
-        return self.__common_step(batch, batch_ind)
+        data, labels = batch
+        out, loss = self.__common_step(batch, batch_ind)
+        self.train_accuracy(self._softmax(out), labels)
+        return loss
 
     def validation_step(self, batch, batch_ind):
-        return self.__common_step(batch, batch_ind)
+        data, labels = batch
+        out, loss = self.__common_step(batch, batch_ind)
+        self.val_accuracy(self._softmax(out), labels)
+        return loss
 
     def test_step(self, batch, batch_ind):
         return self.__common_step(batch, batch_ind)
 
-    def validation_epoch_end(self, outputs: List[Any]) -> None:
-        result = EvalResult()
-        accuracy = pl.metrics.Accuracy()
+    def training_epoch_end(self, outputs) -> None:
+        accuracy = self.train_accuracy.compute()
+        self.log("train_acc_epoch", accuracy, prog_bar=True, on_epoch=True)
+
+    def validation_epoch_end(self, outputs) -> None:
+        accuracy = self.val_accuracy.compute()
+        self.log("val_acc_epoch", accuracy, prog_bar=True, on_epoch=True)
 
 if __name__ == "__main__":
     data_module = EcgDataModule(auto_download=False)
     model = EcgModel()
 
-    trainer = pl.Trainer()
+    trainer = pl.Trainer(max_epochs=20)
     trainer.fit(model=model,
                 datamodule=data_module)
+    trainer.test(model=model,
+                 datamodule=data_module)
